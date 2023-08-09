@@ -1,0 +1,11 @@
+{
+
+	"name" : "Dragon Perk Deck",
+	"description" : "wuh",
+	"author" : "moon",
+	"contact" : "https://modworkshop.net/user/55749",
+	"version" : "1",
+	"color" : "218 0 78",
+
+}
+
