@@ -11,8 +11,10 @@ function PlayerMovement:subtract_stamina(...)
 		self._change_stamina = empty
 	end
 
-	subtract_stamina_original(self, ...)
+	local result = subtract_stamina_original(self, ...)
 
 	self._change_stamina = _change_stamina_original
+
+	return result
 end
 

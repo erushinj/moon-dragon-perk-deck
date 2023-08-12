@@ -3,16 +3,20 @@ Hooks:PostHook( UpgradesTweakData, "_player_definitions", "mdragon__player_defin
 	-- unchanging data related to core functionality (stacks, flak jacket requirement)
 
 	local fright_radius = 900
+	local upd_t = 1 / 8
 	self.mdragon_data = {
-		stacks_min = 0,  -- minimum stacks
-		stacks_max = 20,  -- self-explanatory
-		stacks_gain = 1,  -- gain this many stacks on taking damage
-		stacks_decay = 1,  -- lose this many stacks per decay
-		stacks_decay_t = 4,  -- time in seconds of having armour and not taking damage before stacks start decaying
-		stacks_decay_dt_mul = 4,  -- multiplier on decay bank buildup rate
+		stacks_max = 20,  -- maximum heat stacks
+		stacks_gain = 1,  -- gain this many heat stacks on taking damage
+		stacks_decay = -1,  -- lose this many heat stacks per decay
+		stacks_start_decay_t = 4,  -- s of having armour and not taking damage before decay starts
+		stacks_repeat_decay_t = 1 / 4,  -- s between consecutive decays once it starts
+		absorption_max = 3,  -- maximum damage absorption from god of flight (GoF)
+		absorption_gain = 0.6 * upd_t,  -- absorption gain per update while sprinting + GoF
+		absorption_decay = -0.9 * upd_t,  -- lose this much GoF absorption while not sprinting
+		upd_t = upd_t,  -- update this often in s
 		fright_radius = fright_radius,  -- in centimeters
 		fright_radius_sq = fright_radius ^ 2,  -- in centimeters
-		works_with_armor_kit = true,  -- works only after equipping the flak jacket if somehow using the armour bag
+		works_with_armor_kit = true,  -- takes armour bag into consideration if somehow using it
 		armors_allowed  = { level_5 = true, },  -- flak jacket
 	}
 
@@ -21,43 +25,22 @@ Hooks:PostHook( UpgradesTweakData, "_player_definitions", "mdragon__player_defin
 	self.values.player.mdragon_swift = {
 		{ min = 1, max = 1.3 }  -- move speed multiplier
 	}
-	self.values.player.mdragon_flight = { 5 }  -- stack activation requirement
+	self.values.player.mdragon_fight = { 5 }  -- stack activation requirement
 	self.values.weapon.mdragon_nimble = {
-		{ min = 1, max = 1.4 }  -- swap speed multiplier
+		{ min = 1, max = 2.6 }  -- swap speed multiplier
 	}
-	self.values.player.mdragon_might = { 10 }  -- stack activation requirement
+	self.values.player.mdragon_flight = { 10 }  -- stack activation requirement
 	self.values.weapon.mdragon_ruthless = {
-		{ min = 0, max = 1 }  -- decimal chance to stagger
+		{ min = 0, max = 0.75 }  -- decimal chance to stagger
 	}
 	self.values.weapon.mdragon_fright = { 15 }  -- stack activation requirement
 	self.values.weapon.mdragon_perforating = {
 		{ min = 0, max = 1 }  -- decimal chance to pierce
 	}
-	self.values.player.mdragon_life = { 20 }  -- stack activation requirement/cost
+	self.values.player.mdragon_freight = { 20 }  -- stack activation requirement/cost
 	self.values.player.mdragon_survivor = {
-		{ min = 0, max = 0.01 }  -- decimal % max hp regenerated per second
+		{ min = 0, max = 0.01 * upd_t}  -- decimal % max hp regenerated per second
 	}
-
-	-- dev values
-	self.values.player.mdragon_swift = {
-		{ min = 1.3, max = 1.3 }
-	}
-	self.values.weapon.mdragon_nimble = {
-		{ min = 1.4, max = 1.4 }
-	}
-	self.values.weapon.mdragon_ruthless = {
-		{ min = 1, max = 1 }
-	}
-	self.values.weapon.mdragon_perforating = {
-		{ min = 1, max = 1 }
-	}
-	self.values.player.mdragon_survivor = {
-		{ min = 0.01, max = 0.01 }
-	}
-	self.values.player.mdragon_flight = { 0 }
-	self.values.player.mdragon_might = { 0 }
-	self.values.weapon.mdragon_fright = { 0 }
-	self.values.player.mdragon_life = { 0 }
 
 	self.definitions.player_mdragon = {
 		name_id = "bingus",
@@ -77,12 +60,12 @@ Hooks:PostHook( UpgradesTweakData, "_player_definitions", "mdragon__player_defin
 			category = "player"
 		}
 	}
-	self.definitions.player_mdragon_flight = {
+	self.definitions.player_mdragon_fight = {
 		name_id = "bingus",
 		category = "feature",
 		upgrade = {
 			value = 1,
-			upgrade = "mdragon_flight",
+			upgrade = "mdragon_fight",
 			category = "player"
 		}
 	}
@@ -95,12 +78,12 @@ Hooks:PostHook( UpgradesTweakData, "_player_definitions", "mdragon__player_defin
 			category = "weapon"
 		}
 	}
-	self.definitions.player_mdragon_might = {
+	self.definitions.player_mdragon_flight = {
 		name_id = "bingus",
 		category = "feature",
 		upgrade = {
 			value = 1,
-			upgrade = "mdragon_might",
+			upgrade = "mdragon_flight",
 			category = "player"
 		}
 	}
@@ -131,12 +114,12 @@ Hooks:PostHook( UpgradesTweakData, "_player_definitions", "mdragon__player_defin
 			category = "weapon"
 		}
 	}
-	self.definitions.player_mdragon_life = {
+	self.definitions.player_mdragon_freight = {
 		name_id = "bingus",
 		category = "feature",
 		upgrade = {
 			value = 1,
-			upgrade = "mdragon_life",
+			upgrade = "mdragon_freight",
 			category = "player"
 		}
 	}
