@@ -195,14 +195,14 @@ function PlayerManager:_mdragon_upd_dexterity()
 		return
 	end
 
-	if self._mdragon_old_run_and_reload == nil then
-		self._mdragon_old_run_and_reload = state.RUN_AND_RELOAD
+	if state.MDRAGON_OLD_RUN_AND_RELOAD == nil then
+		state.MDRAGON_OLD_RUN_AND_RELOAD = state.RUN_AND_RELOAD
 	end
 
 	if self:mdragon_try_dexterity_bonus() then
 		state.RUN_AND_RELOAD = true
 	else
-		state.RUN_AND_RELOAD = self._mdragon_old_run_and_reload
+		state.RUN_AND_RELOAD = state.MDRAGON_OLD_RUN_AND_RELOAD
 	end
 end
 
