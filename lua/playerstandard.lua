@@ -8,11 +8,9 @@ end )
 
 -- i hate this so fucking much.
 -- this disgusting fucking garbage below is just to make melee while sprinting not be weird.
+-- still has some visual bugs. not sure i care enough to try to fix them.
 
 local empty = function() end
-local _interupt_action_running_original = PlayerStandard._interupt_action_running
-local _is_meleeing_original = PlayerStandard._is_meleeing
-local _changing_weapon_original = PlayerStandard._changing_weapon
 
 PlayerStandard._mdragon_was_meleeing = nil
 
@@ -49,33 +47,33 @@ end
 
 local _start_action_melee_original = PlayerStandard._start_action_melee
 function PlayerStandard:_start_action_melee(...)
-	if managers.player:mdragon_try_agility_bonus() then
+	if managers.player:mdragon_try_dexterity_bonus() then
 		self._interupt_action_running = empty
 	end
 
 	local result = _start_action_melee_original(self, ...)
 
-	self._interupt_action_running = _interupt_action_running_original
+	self._interupt_action_running = nil
 
 	return result
 end
 
 local _start_action_unequip_weapon_original = PlayerStandard._start_action_unequip_weapon
 function PlayerStandard:_start_action_unequip_weapon(...)
-	if managers.player:mdragon_try_agility_bonus() then
+	if managers.player:mdragon_try_dexterity_bonus() then
 		self._interupt_action_running = empty
 	end
 
 	local result = _start_action_unequip_weapon_original(self, ...)
 
-	self._interupt_action_running = _interupt_action_running_original
+	self._interupt_action_running = nil
 
 	return result
 end
 
 local _start_action_running_original = PlayerStandard._start_action_running
 function PlayerStandard:_start_action_running(...)
-	if managers.player:mdragon_try_agility_bonus() then
+	if managers.player:mdragon_try_dexterity_bonus() then
 		if self:_is_meleeing() or self._mdragon_was_meleeing then
 			self._ext_camera.play_redirect = empty
 		end
@@ -86,16 +84,16 @@ function PlayerStandard:_start_action_running(...)
 
 	local result = _start_action_running_original(self, ...)
 
-	self._ext_camera.play_redirect = self._mdragon_ext_camera_play_redirect_original
-	self._is_meleeing = _is_meleeing_original
-	self._changing_weapon = _changing_weapon_original
+	self._ext_camera.play_redirect = nil
+	self._is_meleeing = nil
+	self._changing_weapon = nil
 
 	return result
 end
 
 local _end_action_running_original = PlayerStandard._end_action_running
 function PlayerStandard:_end_action_running(...)
-	if managers.player:mdragon_try_agility_bonus() then
+	if managers.player:mdragon_try_dexterity_bonus() then
 		if self:_is_meleeing() or self._mdragon_was_meleeing then
 			self._ext_camera.play_redirect = empty
 		end
@@ -104,14 +102,14 @@ function PlayerStandard:_end_action_running(...)
 	local result = _end_action_running_original(self, ...)
 
 	self._mdragon_was_meleeing = nil
-	self._ext_camera.play_redirect = self._mdragon_ext_camera_play_redirect_original
+	self._ext_camera.play_redirect = nil
 
 	return result
 end
 
 local _start_action_jump_original = PlayerStandard._start_action_jump
 function PlayerStandard:_start_action_jump(...)
-	if managers.player:mdragon_try_agility_bonus() then
+	if managers.player:mdragon_try_dexterity_bonus() then
 		if self:_is_meleeing() then
 			self._ext_camera.play_redirect = empty
 		end
@@ -123,7 +121,7 @@ function PlayerStandard:_start_action_jump(...)
 		self._mdragon_was_meleeing = nil
 	end
 
-	self._ext_camera.play_redirect = self._mdragon_ext_camera_play_redirect_original
+	self._ext_camera.play_redirect = nil
 
 	return result
 end

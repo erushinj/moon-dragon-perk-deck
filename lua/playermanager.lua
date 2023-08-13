@@ -18,7 +18,8 @@ Hooks:PostHook( PlayerManager, "check_skills", "mdragon_check_skills", function(
 
 		local function on_player_damage()
 			if self:_mdragon_valid() then
-				self:_mdragon_set_decay(false)
+				self._mdragon_decay = false
+
 				self:_mdragon_change_stacks(mdragon_data.stacks_gain)
 			end
 		end
@@ -89,7 +90,8 @@ Hooks:PostHook( PlayerManager, "on_killshot", "mdragon_on_killshot", function(se
 	if self:_mdragon_valid() then
 		if variant == "melee" then
 			if self:mdragon_try_melee_bonus() then
-				self:_mdragon_set_decay(false)
+				self._mdragon_decay = false
+
 				self:_mdragon_change_stacks(mdragon_data.stacks_gain)
 				self:local_player():character_damage():regenerate_armor()
 			end
@@ -106,7 +108,7 @@ Hooks:PostHook( PlayerManager, "update", "mdragon_update", function(self, t, dt)
 
 		if self:_mdragon_valid() then
 			self:_mdragon_upd_regen()
-			self:_mdragon_upd_agility()
+			self:_mdragon_upd_dexterity()
 			self:_mdragon_upd_decay(t)
 			self:_mdragon_upd_ratio()
 			self:_mdragon_upd_sprint()
@@ -157,16 +159,24 @@ function PlayerManager:_mdragon_chk_armor()
 end
 
 function PlayerManager:_mdragon_valid()
-	if alive(self:local_player()) and self._is_mdragon and self:_mdragon_chk_armor() then
-		return true
+	local pass = false
+
+	if alive(self:local_player()) and self._is_mdragon then
+		local armor = managers.blackmarket:equipped_armor(mdragon_data.works_with_armor_kit, true)
+
+		if mdragon_data.armors_allowed[armor] then
+			pass = true
+		end
 	end
 
-	self:_mdragon_set_decay(false)
+	if not pass then
+		self._mdragon_decay = false
+		self._mdragon_stacks = 0
+		self._mdragon_ratio = 0
+		self._mdragon_absorption = 0
+	end
 
-	self._mdragon_stacks = 0
-	self._mdragon_absorption = 0
-
-	return false
+	return pass
 end
 
 function PlayerManager:_mdragon_upd_regen()
@@ -177,7 +187,7 @@ function PlayerManager:_mdragon_upd_regen()
 	end
 end
 
-function PlayerManager:_mdragon_upd_agility()
+function PlayerManager:_mdragon_upd_dexterity()
 	local movement = self:local_player():movement()
 	local state = movement and movement:current_state()
 
@@ -189,7 +199,7 @@ function PlayerManager:_mdragon_upd_agility()
 		self._mdragon_old_run_and_reload = state.RUN_AND_RELOAD
 	end
 
-	if self:mdragon_try_agility_bonus() then
+	if self:mdragon_try_dexterity_bonus() then
 		state.RUN_AND_RELOAD = true
 	else
 		state.RUN_AND_RELOAD = self._mdragon_old_run_and_reload
@@ -204,8 +214,10 @@ function PlayerManager:_mdragon_upd_decay(t)
 	local character_damage = self:local_player():character_damage()
 	if character_damage:bleed_out() then
 		self:_mdragon_change_stacks(mdragon_data.stacks_max)
-	elseif character_damage:get_real_armor() >= character_damage:_max_armor() then
-		self:_mdragon_set_decay(true)
+	elseif self._mdragon_stacks > 0 then
+		if character_damage:get_real_armor() >= character_damage:_max_armor() then
+			self._mdragon_decay = true
+		end
 	end
 
 	if self._mdragon_decay_t > t then
@@ -223,18 +235,14 @@ end
 
 function PlayerManager:_mdragon_upd_sprint()
 	local change = mdragon_data.absorption_gain
-	local max = mdragon_data.absorption_max
+	local movement = self:local_player():movement()
+	local running = movement and movement:current_state() and movement:current_state():running()
 
-	if self:mdragon_try_sprint_bonus() then
-		local movement = self:local_player():movement()
-		local state = movement and movement:current_state()
-
-		if not state or not state:running() then
-			change = mdragon_data.absorption_decay
-		end
-	else
-		change = -max
+	if not self:mdragon_try_sprint_bonus() or not running then
+		change = mdragon_data.absorption_decay
 	end
+
+	local max = mdragon_data.absorption_max
 
 	self._mdragon_absorption = math.clamp(self._mdragon_absorption + change, 0, max)
 end
@@ -258,7 +266,7 @@ function PlayerManager:_mdragon_upd_hud()
 		WFHud:remove_buff("player", "armor_health_store_amount")
 	end
 
-	local absorption = WFHud.value_format.default(math.ceil(self:damage_absorption()) * 10)
+	-- local absorption = WFHud.value_format.default(math.ceil(self:damage_absorption()) * 10)
 	local absorption = WFHud.value_format.default(math.round(self:damage_absorption() * 10))
 	if tonumber(absorption) > 0 then
 		WFHud:add_buff("player", "cocaine_stacking", absorption)
@@ -318,32 +326,29 @@ function PlayerManager:_mdragon_chk_active_ability(category, upgrade, spend)
 	return true
 end
 
+-- guaranteed critical melee strikes
 function PlayerManager:mdragon_try_melee_bonus()
 	return self:_mdragon_chk_active_ability("player", "mdragon_fight", false)
 end
 
+-- unlimited sprint in all directions
 function PlayerManager:mdragon_try_sprint_bonus()
 	return self:_mdragon_chk_active_ability("player", "mdragon_flight", false)
 end
 
+-- instant kill on headshotting/meleeing staggered/panicking enemy
 function PlayerManager:mdragon_try_headshot_bonus()
 	return self:_mdragon_chk_active_ability("weapon", "mdragon_fright", false)
 end
 
-function PlayerManager:mdragon_try_agility_bonus()
+-- reload/swap/melee while sprinting
+function PlayerManager:mdragon_try_dexterity_bonus()
 	return self:_mdragon_chk_active_ability("player", "mdragon_freight", false)
 end
 
+-- fak effect
 function PlayerManager:mdragon_try_undying_bonus()
 	return self:_mdragon_chk_active_ability("player", "mdragon_freight", true)
-end
-
-function PlayerManager:_mdragon_set_decay(state)
-	if self._mdragon_stacks > 0 then
-		self._mdragon_decay = state
-	else
-		self._mdragon_decay = false
-	end
 end
 
 function PlayerManager:_mdragon_change_stacks(change)
