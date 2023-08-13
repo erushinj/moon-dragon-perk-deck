@@ -1,3 +1,6 @@
+local sh = BLT.Mods:GetModByName("Streamlined Heisting")
+local is_streamlined = sh and sh:IsEnabled() and sh:WasEnabledAtStart() and StreamHeist and true
+
 Hooks:PostHook( UpgradesTweakData, "_player_definitions", "mdragon__player_definitions", function(self)
 
 	-- unchanging data related to core functionality (stacks, flak jacket requirement)
@@ -12,7 +15,7 @@ Hooks:PostHook( UpgradesTweakData, "_player_definitions", "mdragon__player_defin
 		stacks_repeat_decay_t = 1 / 4,  -- s between consecutive decays once it starts
 		absorption_max = 3,  -- maximum damage absorption from god of flight (GoF)
 		absorption_gain = 0.6 * upd_t,  -- absorption gain per update while sprinting + GoF
-		absorption_decay = -0.9 * upd_t,  -- lose this much GoF absorption while not sprinting
+		absorption_decay = is_streamlined and -0.9 * upd_t or -3,  -- absorption loss when walking
 		upd_t = upd_t,  -- update this often in s
 		fright_radius = fright_radius,  -- in centimeters
 		fright_radius_sq = fright_radius ^ 2,  -- in centimeters
@@ -31,11 +34,11 @@ Hooks:PostHook( UpgradesTweakData, "_player_definitions", "mdragon__player_defin
 	}
 	self.values.player.mdragon_flight = { 10 }  -- stack activation requirement
 	self.values.weapon.mdragon_ruthless = {
-		{ min = 0, max = 0.75 }  -- decimal chance to stagger
+		{ min = 0, max = 0.75 }  -- additive decimal chance to stagger
 	}
 	self.values.weapon.mdragon_fright = { 15 }  -- stack activation requirement
 	self.values.weapon.mdragon_perforating = {
-		{ min = 0, max = 1 }  -- decimal chance to pierce
+		{ min = 0, max = 1 }  -- additive decimal chance to pierce
 	}
 	self.values.player.mdragon_freight = { 20 }  -- stack activation requirement/cost
 	self.values.player.mdragon_survivor = {
