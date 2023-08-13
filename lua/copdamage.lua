@@ -1,41 +1,18 @@
-local sh = BLT.Mods:GetModByName("Streamlined Heisting")
-local is_streamlined = sh and sh:IsEnabled() and sh:WasEnabledAtStart() and StreamHeist and true
+local roll_critical_hit_original = CopDamage.roll_critical_hit
+function CopDamage:roll_critical_hit(attack_data, ...)
+	local can_crit = self:can_be_critical(attack_data)
+	local is_melee = attack_data.variant == "melee"
 
-
-Hooks:PostHook( CopDamage, "roll_critical_hit", "mdragon_roll_critical_hit", function(self, attack_data)
-
-	local critical_hit, damage = Hooks:GetReturn()
-
-	-- check that the hit is a melee that isnt already a crit
-	if critical_hit or attack_data.variant ~= "melee" then
-		return critical_hit, damage
+	if can_crit and is_melee and managers.player:mdragon_try_melee_bonus() then
+		managers.player.critical_hit_chance = function() return 2 end
 	end
 
-	-- check again that the hit can crit
-	if not self:can_be_critical(attack_data) then
-		return critical_hit, damage
-	end
+	local result = { roll_critical_hit_original(self, attack_data, ...) }
 
-	if not managers.player:mdragon_try_melee_bonus() then
-		return critical_hit, damage
-	end
+	managers.player.critical_hit_chance = nil
 
-	critical_hit = true
-
-	local critical_damage_mul
-	if is_streamlined then
-		critical_damage_mul = 3
-	else
-		local critical_hits = self._char_tweak.critical_hits or {}
-
-		critical_damage_mul = critical_hits.damage_mul or self._char_tweak.headshot_dmg_mul
-	end
-
-	damage = critical_damage_mul and damage * critical_damage_mul or self._health * 10
-
-	return critical_hit, damage
-
-end )
+	return unpack(result)
+end
 
 Hooks:PreHook( CopDamage, "damage_bullet", "mdragon_damage_bullet", function(self, attack_data)
 	if self:is_head(attack_data.col_ray.body) then
@@ -66,10 +43,18 @@ function CopDamage:mdragon_chk_has_shield()
 end
 
 
--- this is a bit disgusting, accessing private stuff from here, but eh.
 local forbidden_hurt_types = table.set("light_hurt", "healed")
 function CopDamage:_mdragon_chk_is_enemy_disabled(attack_data)
+	if not alive(self._unit) then
+		return false
+	end
+
 	if self._dead or self._invulnerable then
+		return false
+	end
+
+	-- not converts
+	if self._unit:in_slot(16) then
 		return false
 	end
 
