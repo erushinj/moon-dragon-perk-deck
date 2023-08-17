@@ -1,40 +1,20 @@
-local function on_player_damage()
-	managers.player:send_message(Message.OnPlayerDamage, "mdragon")
-end
-
-Hooks:PostHook( PlayerDamage, "damage_tase", "mdragon_damage_tase", on_player_damage )
-Hooks:PostHook( PlayerDamage, "damage_killzone", "mdragon_damage_killzone", on_player_damage )
-Hooks:PostHook( PlayerDamage, "damage_explosion", "mdragon_damage_explosion", on_player_damage )
-Hooks:PostHook( PlayerDamage, "damage_fire", "mdragon_damage_fire", on_player_damage )
-Hooks:PostHook( PlayerDamage, "damage_fire_hit", "mdragon_damage_fire_hit", on_player_damage )
-Hooks:PostHook( PlayerDamage, "damage_simple", "mdragon_damage_simple", on_player_damage )
-
+-- renamed some parameters for sake of keeping code under 100 columns.
 local _check_bleed_out_original = PlayerDamage._check_bleed_out
-function PlayerDamage:_check_bleed_out(can_activate_berserker, ignore_movement_state, ...)
-	local can_try_undying_bonus = can_activate_berserker
+function PlayerDamage:_check_bleed_out(can_swan_song, was_fall, ignore_reduce_revive, ...)
+	local time = Application:time()
+	local pass = can_swan_song and not was_fall and not ignore_reduce_revive
+	pass = pass and not self._unit:movement():zipline_unit() and self:get_real_health() <= 0
+	pass = pass and not self._block_medkit_auto_revive
+	pass = pass and time > self._uppers_elapsed + self._UPPERS_COOLDOWN
+	pass = pass and managers.player:mdragon_try_undying_bonus()
 
-	if ignore_movement_state then
-		on_player_damage()
-
-		can_try_undying_bonus = false
+	if not pass then
+		return _check_bleed_out_original(self, can_swan_song, was_fall, ignore_reduce_revive, ...)
 	end
 
-	if not can_try_undying_bonus or self:get_real_health() > 0 then
-		return _check_bleed_out_original(self, can_activate_berserker, ignore_movement_state, ...)
-	end
+	self._said_hurt = false
+	self._uppers_elapsed = time
 
-	if not managers.player:mdragon_try_undying_bonus() then
-		return _check_bleed_out_original(self, can_activate_berserker, ignore_movement_state, ...)
-	end
-
-	self:set_health(self:_max_health())
-
-	managers.hud:set_player_health({
-		current = self:get_real_health(),
-		total = self:_max_health(),
-		revives = Application:digest_value(self._revives, false)
-	})
-
-	self:_send_set_health()
-	self:_regenerate_armor()
+	self:change_health(self:_max_health() * self._healing_reduction)
+	self._unit:sound():play("pickup_fak_skill")
 end

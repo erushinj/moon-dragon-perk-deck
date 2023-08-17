@@ -33,30 +33,25 @@ Hooks:PostHook( PlayerManager, "check_skills", "mdragon_check_skills", function(
 
 	if self:has_category_upgrade("weapon", "mdragon_ruthless") then
 		local function on_enemy_shot(unit, attack_data)
-			if not alive(unit) then
-				return
-			end
+			local cop_damage = alive(unit) and unit:character_damage()
 
-			local character_damage = unit:character_damage()
-			if not character_damage then
+			if not cop_damage then
 				return
 			end
 
 			-- must be an enemy unit - probably not one if lacking these
-			local ruthless_func = character_damage.mdragon_chk_ruthless_allowed
-			local shield_func = character_damage.mdragon_chk_has_shield
-			if not ruthless_func or not shield_func then
+			if not cop_damage.mdragon_chk_ruthless or not cop_damage.mdragon_chk_has_shield then
 				return
 			end
 
 			-- must be allowed to stagger
-			if not character_damage:mdragon_chk_ruthless_allowed() then
+			if not cop_damage:mdragon_chk_ruthless() then
 				return
 			end
 
 			local chance = self:mdragon_get_ruthless_amount()
 			if chance >= math.random() then
-				local is_shield = character_damage:mdragon_chk_has_shield()
+				local is_shield = cop_damage:mdragon_chk_has_shield()
 				local result_type = is_shield and "shield_knock" or "stagger"
 
 				attack_data.result = attack_data.result or {}
@@ -64,7 +59,7 @@ Hooks:PostHook( PlayerManager, "check_skills", "mdragon_check_skills", function(
 				attack_data[result_type] = true
 				attack_data.damage = 0
 
-				character_damage:force_hurt(attack_data)
+				cop_damage:force_hurt(attack_data)
 			end
 		end
 
@@ -92,7 +87,6 @@ Hooks:PostHook( PlayerManager, "on_killshot", "mdragon_on_killshot", function(se
 			if self:mdragon_try_melee_bonus() then
 				self._mdragon_decay = false
 
-				self:_mdragon_change_stacks(mdragon_data.stacks_gain)
 				self:local_player():character_damage():regenerate_armor()
 			end
 		elseif headshot and self:mdragon_try_headshot_bonus() then
@@ -119,13 +113,13 @@ end )
 
 
 function PlayerManager:_mdragon_panic_helper(killed_unit)
-	local character_damage = alive(killed_unit) and killed_unit:character_damage()
+	local cop_damage = alive(killed_unit) and killed_unit:character_damage()
 
-	if not character_damage or not character_damage.mdragon_chk_is_special then
+	if not cop_damage or not cop_damage.mdragon_chk_is_special then
 		return
 	end
 
-	if not character_damage:mdragon_chk_is_special() then
+	if not cop_damage:mdragon_chk_is_special() then
 		return
 	end
 
@@ -135,34 +129,25 @@ function PlayerManager:_mdragon_panic_helper(killed_unit)
 	if distance_sq <= mdragon_data.fright_radius_sq then
 		local slotmask = managers.slot:get_mask("enemies")
 		local fright_radius = mdragon_data.fright_radius
-		local units = World:find_units_quick("sphere", unit_pos, fright_radius, slotmask)
+		local units = World:find_units_quick("sphere", player_pos, fright_radius, slotmask)
 
 		for e_key, unit in pairs(units) do
-			local cop_damage = alive(unit) and unit:character_damage()
+			local c_dmg = alive(unit) and unit:character_damage()
 
-			if cop_damage and cop_damage.mdragon_chk_is_special then
-				if not cop_damage:dead() and not cop_damage:mdragon_chk_is_special() then
-					cop_damage:build_suppression(0, -1)
+			if c_dmg and c_dmg.mdragon_chk_is_special then
+				if not c_dmg:dead() and not c_dmg:mdragon_chk_is_special() then
+					c_dmg:build_suppression(0, -1)
 				end
 			end
 		end
 	end
 end
 
-function PlayerManager:_mdragon_chk_armor()
-	local armor = managers.blackmarket:equipped_armor(mdragon_data.works_with_armor_kit, true)
-	if not mdragon_data.armors_allowed[armor] then
-		return false
-	end
-
-	return true
-end
-
 function PlayerManager:_mdragon_valid()
 	local pass = false
 
 	if alive(self:local_player()) and self._is_mdragon then
-		local armor = managers.blackmarket:equipped_armor(mdragon_data.works_with_armor_kit, true)
+		local armor = managers.blackmarket:equipped_armor(true, true)
 
 		if mdragon_data.armors_allowed[armor] then
 			pass = true
@@ -180,10 +165,10 @@ function PlayerManager:_mdragon_valid()
 end
 
 function PlayerManager:_mdragon_upd_regen()
-	local character_damage = self:local_player():character_damage()
+	local player_damage = self:local_player():character_damage()
 
-	if character_damage:get_real_health() < character_damage:_max_health() then
-		character_damage:restore_health(self:mdragon_get_survivor_amount(), false, false)
+	if player_damage:get_real_health() < player_damage:_max_health() then
+		player_damage:restore_health(self:mdragon_get_survivor_amount(), false, false)
 	end
 end
 
@@ -211,11 +196,11 @@ function PlayerManager:_mdragon_upd_decay(t)
 		self._mdragon_decay_t = t + mdragon_data.stacks_start_decay_t
 	end
 
-	local character_damage = self:local_player():character_damage()
-	if character_damage:bleed_out() then
+	local player_damage = self:local_player():character_damage()
+	if player_damage:bleed_out() then
 		self:_mdragon_change_stacks(mdragon_data.stacks_max)
 	elseif self._mdragon_stacks > 0 then
-		if character_damage:get_real_armor() >= character_damage:_max_armor() then
+		if player_damage:get_real_armor() >= player_damage:_max_armor() then
 			self._mdragon_decay = true
 		end
 	end
@@ -252,8 +237,11 @@ function PlayerManager:_mdragon_upd_hud()
 		return
 	end
 
+	local damage_absorption = self:damage_absorption()
+
 	managers.hud:set_stored_health_max(mdragon_data.stacks_max)
 	managers.hud:set_stored_health(self._mdragon_ratio)
+	managers.hud:set_absorb_active(HUDManager.PLAYER_PANEL, damage_absorption)
 
 	if not has_wf_hud then
 		return
@@ -266,8 +254,8 @@ function PlayerManager:_mdragon_upd_hud()
 		WFHud:remove_buff("player", "armor_health_store_amount")
 	end
 
-	-- local absorption = WFHud.value_format.default(math.ceil(self:damage_absorption()) * 10)
-	local absorption = WFHud.value_format.default(math.round(self:damage_absorption() * 10))
+	-- local absorption = WFHud.value_format.default(math.ceil(damage_absorption) * 10)
+	local absorption = WFHud.value_format.default(math.round(damage_absorption * 10))
 	if tonumber(absorption) > 0 then
 		WFHud:add_buff("player", "cocaine_stacking", absorption)
 	else
@@ -349,6 +337,10 @@ end
 -- fak effect
 function PlayerManager:mdragon_try_undying_bonus()
 	return self:_mdragon_chk_active_ability("player", "mdragon_freight", true)
+end
+
+function PlayerManager:mdragon_reset_decay()
+	self._mdragon_decay = false
 end
 
 function PlayerManager:_mdragon_change_stacks(change)

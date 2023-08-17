@@ -4,23 +4,21 @@ local is_streamlined = sh and sh:IsEnabled() and sh:WasEnabledAtStart() and Stre
 Hooks:PostHook( UpgradesTweakData, "_player_definitions", "mdragon__player_definitions", function(self)
 
 	-- unchanging data related to core functionality (stacks, flak jacket requirement)
-
 	local fright_radius = 900
 	local upd_t = 1 / 8
 	self.mdragon_data = {
-		stacks_max = 20,  -- maximum heat stacks
+		stacks_max = 10,  -- maximum heat stacks
 		stacks_gain = 1,  -- gain this many heat stacks on taking damage
 		stacks_decay = -1,  -- lose this many heat stacks per decay
 		stacks_start_decay_t = 4,  -- s of having armour and not taking damage before decay starts
-		stacks_repeat_decay_t = 1 / 4,  -- s between consecutive decays once it starts
-		absorption_max = 3,  -- maximum damage absorption from god of flight (GoF)
-		absorption_gain = 0.6 * upd_t,  -- absorption gain per update while sprinting + GoF
-		absorption_decay = is_streamlined and -0.9 * upd_t or -3,  -- absorption loss when walking
+		stacks_repeat_decay_t = upd_t * 4,  -- s between consecutive decays once it starts
+		absorption_max = 2.4,  -- maximum damage absorption from god of flight (GoF)
+		absorption_gain = 1.2 * upd_t,  -- absorption gain per update while sprinting + GoF
+		absorption_decay = is_streamlined and -0.8 * upd_t or -2.4,  -- walking absorption loss
 		upd_t = upd_t,  -- update this often in s
 		fright_radius = fright_radius,  -- in centimeters
 		fright_radius_sq = fright_radius ^ 2,  -- in centimeters
-		works_with_armor_kit = true,  -- takes armour bag into consideration if somehow using it
-		armors_allowed  = { level_5 = true, },  -- flak jacket
+		armors_allowed  = table.set("level_5"),  -- flak jacket
 	}
 
 	-- related to upgrades gained
@@ -28,21 +26,21 @@ Hooks:PostHook( UpgradesTweakData, "_player_definitions", "mdragon__player_defin
 	self.values.player.mdragon_swift = {
 		{ min = 1, max = 1.3 }  -- move speed multiplier
 	}
-	self.values.player.mdragon_fight = { 5 }  -- stack activation requirement
+	self.values.player.mdragon_fight = { 2 }  -- stack activation requirement
 	self.values.weapon.mdragon_nimble = {
 		{ min = 1, max = 2.6 }  -- swap speed multiplier
 	}
-	self.values.player.mdragon_flight = { 10 }  -- stack activation requirement
+	self.values.player.mdragon_flight = { 4 }  -- stack activation requirement
 	self.values.weapon.mdragon_ruthless = {
 		{ min = 0, max = 0.75 }  -- additive decimal chance to stagger
 	}
-	self.values.weapon.mdragon_fright = { 15 }  -- stack activation requirement
+	self.values.weapon.mdragon_fright = { 6 }  -- stack activation requirement
 	self.values.weapon.mdragon_perforating = {
 		{ min = 0, max = 1 }  -- additive decimal chance to pierce
 	}
-	self.values.player.mdragon_freight = { 20 }  -- stack activation requirement/cost
+	self.values.player.mdragon_freight = { 8 }  -- stack activation requirement/cost
 	self.values.player.mdragon_survivor = {
-		{ min = 0, max = 0.01 * upd_t}  -- decimal % max hp regenerated per second
+		{ min = 0, max = 0.02 * upd_t }  -- decimal % max hp regenerated per second
 	}
 
 	self.definitions.player_mdragon = {

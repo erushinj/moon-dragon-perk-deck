@@ -1,10 +1,11 @@
+local guaranteed = function() return 2 end
 local roll_critical_hit_original = CopDamage.roll_critical_hit
 function CopDamage:roll_critical_hit(attack_data, ...)
 	local can_crit = self:can_be_critical(attack_data)
 	local is_melee = attack_data.variant == "melee"
 
 	if can_crit and is_melee and managers.player:mdragon_try_melee_bonus() then
-		managers.player.critical_hit_chance = function() return 2 end
+		managers.player.critical_hit_chance = guaranteed
 	end
 
 	local result = { roll_critical_hit_original(self, attack_data, ...) }
@@ -16,17 +17,21 @@ end
 
 Hooks:PreHook( CopDamage, "damage_bullet", "mdragon_damage_bullet", function(self, attack_data)
 	if self:is_head(attack_data.col_ray.body) then
+		managers.player:mdragon_reset_decay()
+
 		self:_mdragon_headshot_bonus_helper(attack_data)
 	end
 end )
 
 Hooks:PreHook( CopDamage, "damage_melee", "mdragon_damage_melee", function(self, attack_data)
+	managers.player:mdragon_reset_decay()
+
 	if self:_mdragon_headshot_bonus_helper(attack_data) then
 		attack_data.damage = self._HEALTH_INIT
 	end
 end )
 
-function CopDamage:mdragon_chk_ruthless_allowed()
+function CopDamage:mdragon_chk_ruthless()
 	if self._dead or self._char_tweak.immune_to_knock_down then
 		return false
 	end
@@ -45,7 +50,7 @@ end
 
 local forbidden_hurt_types = table.set("light_hurt", "healed")
 function CopDamage:_mdragon_chk_is_enemy_disabled(attack_data)
-	if not alive(self._unit) then
+	if not alive(self._unit) or self._unit:in_slot(16) then
 		return false
 	end
 
@@ -53,19 +58,12 @@ function CopDamage:_mdragon_chk_is_enemy_disabled(attack_data)
 		return false
 	end
 
-	-- not converts
-	if self._unit:in_slot(16) then
-		return false
-	end
-
 	if self:chk_immune_to_attacker(attack_data.attacker_unit) then
 		return false
 	end
 
-	local movement = alive(self._unit) and self._unit:movement()
-	local active_actions = movement and movement._active_actions
+	local active_actions = self._unit:movement()._active_actions
 	local full_body_action = active_actions and active_actions[1]
-
 	if not full_body_action then
 		return false
 	end
@@ -86,6 +84,8 @@ function CopDamage:_mdragon_chk_is_enemy_disabled(attack_data)
 	return false
 end
 
+local no_medic_heal = function() return false end
+local no_damage_reduction = function(self, damage) return damage end
 function CopDamage:_mdragon_headshot_bonus_helper(attack_data)
 	if not self:_mdragon_chk_is_enemy_disabled(attack_data) then
 		return false
@@ -95,9 +95,6 @@ function CopDamage:_mdragon_headshot_bonus_helper(attack_data)
 		return false
 	end
 
-	self.check_medic_heal = function() return false end
-	self._apply_damage_reduction = function(self, damage) return damage end
-
 	local char_tweak = clone(self._char_tweak)
 
 	char_tweak.headshot_dmg_mul = nil
@@ -105,7 +102,8 @@ function CopDamage:_mdragon_headshot_bonus_helper(attack_data)
 	char_tweak.DAMAGE_CLAMP_BULLET = nil
 
 	self._char_tweak = char_tweak
-
+	self.check_medic_heal = no_medic_heal
+	self._apply_damage_reduction = no_damage_reduction
 	self._has_plate = nil
 	self._marked_dmg_dist_mul = nil
 	self._damage_reduction_multiplier = nil

@@ -4,7 +4,6 @@ end )
 
 
 local empty = function() end
-local _change_stamina_original = PlayerMovement._change_stamina
 local subtract_stamina_original = PlayerMovement.subtract_stamina
 function PlayerMovement:subtract_stamina(...)
 	if managers.player:mdragon_try_sprint_bonus() then
@@ -13,8 +12,7 @@ function PlayerMovement:subtract_stamina(...)
 
 	local result = subtract_stamina_original(self, ...)
 
-	self._change_stamina = _change_stamina_original
+	self._change_stamina = nil
 
 	return result
 end
-

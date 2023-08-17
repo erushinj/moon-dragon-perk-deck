@@ -14,10 +14,6 @@ local empty = function() end
 
 PlayerStandard._mdragon_was_meleeing = nil
 
-Hooks:PostHook( PlayerStandard, "init", "mdragon_init", function(self)
-	self._mdragon_ext_camera_play_redirect_original = self._ext_camera.play_redirect
-end )
-
 Hooks:PreHook( PlayerStandard, "_do_action_melee", "mdragon__do_action_melee", function(self)
 	-- if self._running then
 		self._mdragon_was_meleeing = true
@@ -34,7 +30,6 @@ function PlayerStandard:_update_running_timers(...)
 
 		if not is_meleeing and need_start_running then
 			if self._ext_camera:play_redirect(self:get_animation("start_running")) then
-				log("start running")
 				self._mdragon_was_meleeing = nil
 			end
 		end
@@ -125,16 +120,3 @@ function PlayerStandard:_start_action_jump(...)
 
 	return result
 end
-
--- local _update_foley_original = PlayerStandard._update_foley
--- function PlayerStandard:_update_foley(...)
--- 	local was_in_air = self._state_data.in_air == true
-
--- 	local result = _update_foley_original(self, ...)
-
--- 	if was_in_air and not self._state_data.in_air and self._running_wanted then
-
--- 	end
-
--- 	return result
--- end
