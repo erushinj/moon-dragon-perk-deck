@@ -289,7 +289,7 @@ function PlayerManager:mdragon_get_ruthless_amount()
 end
 
 function PlayerManager:mdragon_get_perforating_amount()
-	return self:_mdragon_passive_ability_amount("weapon", "mdragon_perforating", 1)
+	return self:_mdragon_passive_ability_amount("weapon", "mdragon_perforating", 0)
 end
 
 function PlayerManager:mdragon_get_survivor_amount()
