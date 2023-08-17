@@ -16,20 +16,36 @@ function CopDamage:roll_critical_hit(attack_data, ...)
 end
 
 Hooks:PreHook( CopDamage, "damage_bullet", "mdragon_damage_bullet", function(self, attack_data)
-	if self:is_head(attack_data.col_ray.body) then
-		managers.player:mdragon_reset_decay()
+	if self:mdragon_not_hostage() and self:mdragon_chk_attacker_is_player(attack_data) then
+		if self:is_head(attack_data.col_ray.body) then
+			managers.player:mdragon_reset_decay()
 
-		self:_mdragon_headshot_bonus_helper(attack_data)
+			self:_mdragon_headshot_bonus_helper(attack_data)
+		end
 	end
 end )
 
 Hooks:PreHook( CopDamage, "damage_melee", "mdragon_damage_melee", function(self, attack_data)
-	managers.player:mdragon_reset_decay()
+	if self:mdragon_not_hostage() and self:mdragon_chk_attacker_is_player(attack_data) then
+		managers.player:mdragon_reset_decay()
 
-	if self:_mdragon_headshot_bonus_helper(attack_data) then
-		attack_data.damage = self._HEALTH_INIT
+		if managers.player:mdragon_try_melee_bonus() then
+			managers.player:mdragon_melee_add_armor("strike")
+		end
+
+		if self:_mdragon_headshot_bonus_helper(attack_data) then
+			attack_data.damage = self._HEALTH_INIT
+		end
 	end
 end )
+
+function CopDamage:mdragon_chk_attacker_is_player(attack_data)
+	return attack_data and attack_data.attacker_unit == managers.player:local_player()
+end
+
+function CopDamage:mdragon_not_hostage()
+	return alive(self._unit) and not self._unit:in_slot(16) and not self._unit:in_slot(22)
+end
 
 function CopDamage:mdragon_chk_ruthless()
 	if self._dead or self._char_tweak.immune_to_knock_down then
@@ -50,10 +66,6 @@ end
 
 local forbidden_hurt_types = table.set("light_hurt", "healed")
 function CopDamage:_mdragon_chk_is_enemy_disabled(attack_data)
-	if not alive(self._unit) or self._unit:in_slot(16) then
-		return false
-	end
-
 	if self._dead or self._invulnerable then
 		return false
 	end

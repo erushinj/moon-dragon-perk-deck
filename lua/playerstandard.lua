@@ -3,7 +3,7 @@ Hooks:PostHook( PlayerStandard, "_can_run_directional", "mdragon__can_run_direct
 end )
 
 Hooks:PostHook( PlayerStandard, "_get_swap_speed_multiplier", "mdragon__get_swap_speed_multiplier", function(self)
-	return Hooks:GetReturn() * managers.player:mdragon_get_nimble_amount()
+	return Hooks:GetReturn() * managers.player:mdragon_get_slick_amount()
 end )
 
 -- i hate this so fucking much.
