@@ -63,10 +63,18 @@ function CopDamage:mdragon_chk_has_shield()
 	return self._unit:inventory() and alive(self._unit:inventory():shield_unit())
 end
 
-
+local forbidden_tags = { "tank", "phalanx_vip", }
 local forbidden_hurt_types = table.set("light_hurt", "healed")
 function CopDamage:_mdragon_chk_is_enemy_disabled(attack_data)
 	if self._dead or self._invulnerable then
+		return false
+	end
+
+	local unit = self._unit
+	local unit_base = unit:base()
+	local has_forbidden_tag = unit_base:has_any_tag(forbidden_tags)
+	local has_forbidden_tweak = unit_base:char_tweak_name():match("boss")
+	if has_forbidden_tag or has_forbidden_tweak then
 		return false
 	end
 
@@ -74,7 +82,7 @@ function CopDamage:_mdragon_chk_is_enemy_disabled(attack_data)
 		return false
 	end
 
-	local active_actions = self._unit:movement()._active_actions
+	local active_actions = unit:movement()._active_actions
 	local full_body_action = active_actions and active_actions[1]
 	if not full_body_action then
 		return false
