@@ -274,7 +274,7 @@ function PlayerManager:_mdragon_passive_ability_amount(category, upgrade, defaul
 		return default
 	end
 
-	local value = self:upgrade_value(category, upgrade, { default, default })
+	local value = self:upgrade_value(category, upgrade, { min = default, max = default })
 	if not value then
 		return default
 	end
