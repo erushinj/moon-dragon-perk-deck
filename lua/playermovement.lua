@@ -1,5 +1,5 @@
 Hooks:PostHook( PlayerMovement, "is_above_stamina_threshold", "mdragon_is_above_stamina_threshold", function(self)
-	return managers.player:mdragon_try_sprint_bonus() or Hooks:GetReturn()
+	return Hooks:GetReturn() or managers.player:mdragon_try_sprint_bonus()
 end )
 
 

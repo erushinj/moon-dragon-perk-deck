@@ -14,6 +14,10 @@ local empty = function() end
 
 PlayerStandard._mdragon_was_meleeing = nil
 
+Hooks:PostHook( PlayerStandard, "init", "mdragon_init", function(self, unit)
+	self.RUN_AND_RELOAD = self.RUN_AND_RELOAD or managers.player:is_mdragon()
+end )
+
 Hooks:PreHook( PlayerStandard, "_do_action_melee", "mdragon__do_action_melee", function(self)
 	-- if self._running then
 		self._mdragon_was_meleeing = true
@@ -42,7 +46,7 @@ end
 
 local _start_action_melee_original = PlayerStandard._start_action_melee
 function PlayerStandard:_start_action_melee(...)
-	if managers.player:mdragon_try_dexterity_bonus() then
+	if managers.player:mdragon_try_sprint_bonus() then
 		self._interupt_action_running = empty
 	end
 
@@ -55,7 +59,7 @@ end
 
 local _start_action_unequip_weapon_original = PlayerStandard._start_action_unequip_weapon
 function PlayerStandard:_start_action_unequip_weapon(...)
-	if managers.player:mdragon_try_dexterity_bonus() then
+	if managers.player:mdragon_try_sprint_bonus() then
 		self._interupt_action_running = empty
 	end
 
@@ -68,7 +72,7 @@ end
 
 local _start_action_running_original = PlayerStandard._start_action_running
 function PlayerStandard:_start_action_running(...)
-	if managers.player:mdragon_try_dexterity_bonus() then
+	if managers.player:mdragon_try_sprint_bonus() then
 		if self:_is_meleeing() or self._mdragon_was_meleeing then
 			self._ext_camera.play_redirect = empty
 		end
@@ -88,7 +92,7 @@ end
 
 local _end_action_running_original = PlayerStandard._end_action_running
 function PlayerStandard:_end_action_running(...)
-	if managers.player:mdragon_try_dexterity_bonus() then
+	if managers.player:mdragon_try_sprint_bonus() then
 		if self:_is_meleeing() or self._mdragon_was_meleeing then
 			self._ext_camera.play_redirect = empty
 		end
@@ -104,7 +108,7 @@ end
 
 local _start_action_jump_original = PlayerStandard._start_action_jump
 function PlayerStandard:_start_action_jump(...)
-	if managers.player:mdragon_try_dexterity_bonus() then
+	if managers.player:mdragon_try_sprint_bonus() then
 		if self:_is_meleeing() then
 			self._ext_camera.play_redirect = empty
 		end

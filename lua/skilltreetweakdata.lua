@@ -16,14 +16,14 @@ Hooks:PostHook( SkillTreeTweakData, "init", "mdragon_init", function(self)
 			name_id = "menu_deck_mdragon_2",
 			desc_id = "menu_deck_mdragon_2_desc",
 			cost = 0,
-			upgrades = { "player_mdragon_fight", },
+			upgrades = { "player_mdragon_might", },
 			icon_xy = { 2, 7 }
 		},
 		{
 			name_id = "menu_deck_mdragon_3",
 			desc_id = "menu_deck_mdragon_3_desc",
 			cost = 0,
-			upgrades = { "weapon_mdragon_slick", },
+			upgrades = { "player_mdragon_slick", },
 			icon_xy = { 7, 2 }  -- not a good icon but the best i can do
 		},
 		{
@@ -37,28 +37,28 @@ Hooks:PostHook( SkillTreeTweakData, "init", "mdragon_init", function(self)
 			name_id = "menu_deck_mdragon_5",
 			desc_id = "menu_deck_mdragon_5_desc",
 			cost = 0,
-			upgrades = { "weapon_mdragon_staggering", },
+			upgrades = { "player_mdragon_staggering", },
 			icon_xy = { 3, 5 }
 		},
 		{
 			name_id = "menu_deck_mdragon_6",
 			desc_id = "menu_deck_mdragon_6_desc",
 			cost = 0,
-			upgrades = { "weapon_mdragon_fright", },
+			upgrades = { "player_mdragon_fright", },
 			icon_xy = { 2, 5 }
 		},
 		{
 			name_id = "menu_deck_mdragon_7",
 			desc_id = "menu_deck_mdragon_7_desc",
 			cost = 0,
-			upgrades = { "weapon_mdragon_shattering", },
+			upgrades = { "player_mdragon_shattering", },
 			icon_xy = { 5, 2 }
 		},
 		{
 			name_id = "menu_deck_mdragon_8",
 			desc_id = "menu_deck_mdragon_8_desc",
 			cost = 0,
-			upgrades = { "player_mdragon_freight", },
+			upgrades = { "player_mdragon_life", },
 			icon_xy = { 3, 7 }
 		},
 		{

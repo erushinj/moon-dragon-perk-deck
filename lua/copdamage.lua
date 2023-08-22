@@ -16,51 +16,81 @@ function CopDamage:roll_critical_hit(attack_data, ...)
 end
 
 Hooks:PreHook( CopDamage, "damage_bullet", "mdragon_damage_bullet", function(self, attack_data)
-	if self:mdragon_not_hostage() and self:mdragon_chk_attacker_is_player(attack_data) then
+	if self:_mdragon_bonuses_valid(attack_data) then
 		if self:is_head(attack_data.col_ray.body) then
-			managers.player:mdragon_reset_decay()
-
 			self:_mdragon_headshot_bonus_helper(attack_data)
 		end
 	end
 end )
 
-Hooks:PreHook( CopDamage, "damage_melee", "mdragon_damage_melee", function(self, attack_data)
-	if self:mdragon_not_hostage() and self:mdragon_chk_attacker_is_player(attack_data) then
-		managers.player:mdragon_reset_decay()
-
-		if managers.player:mdragon_try_melee_bonus() then
-			managers.player:mdragon_melee_add_armor("strike")
-		end
-
+local damage_melee_original = CopDamage.damage_melee
+function CopDamage:damage_melee(attack_data, ...)
+	if self:_mdragon_bonuses_valid(attack_data) then
 		if self:_mdragon_headshot_bonus_helper(attack_data) then
 			attack_data.damage = self._HEALTH_INIT
 		end
 	end
-end )
 
-function CopDamage:mdragon_chk_attacker_is_player(attack_data)
-	return attack_data and attack_data.attacker_unit == managers.player:local_player()
+	local result = damage_melee_original(self, attack_data, ...)
+
+	if type(result) == "table" then
+		managers.player:send_message( Message.OnEnemyShot, "mdragon", self._unit, attack_data )
+	end
+
+	return result
 end
 
+-- Hooks:PreHook( CopDamage, "damage_melee", "mdragon_damage_melee", function(self, attack_data)
+-- 	if self:_mdragon_bonuses_valid(attack_data) then
+-- 		managers.player:mdragon_on_melee_attack()
+
+-- 		if self:_mdragon_headshot_bonus_helper(attack_data) then
+-- 			attack_data.damage = self._HEALTH_INIT
+-- 		end
+-- 	end
+-- end )
+
+function CopDamage:_mdragon_bonuses_valid(attack_data)
+	if self:mdragon_not_hostage() and not self._dead then
+		if attack_data.attacker_unit == managers.player:local_player() then
+			return true
+		end
+	end
+
+	return false
+end
+
+local forbidden_slots = table.set(16, 22)
 function CopDamage:mdragon_not_hostage()
-	return alive(self._unit) and not self._unit:in_slot(16) and not self._unit:in_slot(22)
-end
+	local unit = alive(self._unit) and self._unit
 
-function CopDamage:mdragon_chk_ruthless()
-	if self._dead or self._char_tweak.immune_to_knock_down then
+	if not unit or managers.enemy:is_civilian(unit) then
 		return false
+	end
+
+	for slot in pairs(forbidden_slots) do
+		if not unit or unit:in_slot(slot) then
+			return false
+		end
 	end
 
 	return true
 end
 
+function CopDamage:mdragon_chk_ruthless()
+	return not self._dead and not self._char_tweak.immune_to_knock_down
+end
+
 function CopDamage:mdragon_chk_is_special()
-	return self._unit:base():has_tag("special")
+	local unit_base = alive(self._unit) and self._unit:base()
+
+	return unit_base and unit_base:has_tag("special")
 end
 
 function CopDamage:mdragon_chk_has_shield()
-	return self._unit:inventory() and alive(self._unit:inventory():shield_unit())
+	local unit_inventory = alive(self._unit) and self._unit:inventory()
+
+	return unit_inventory and alive(unit_inventory:shield_unit())
 end
 
 local forbidden_tags = { "tank", "phalanx_vip", }
