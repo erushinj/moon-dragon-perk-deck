@@ -149,6 +149,10 @@ function PlayerManager:_mdragon_panic_helper(killed_unit)
 	end
 end
 
+function PlayerManager:is_mdragon()
+	return self._is_mdragon
+end
+
 function PlayerManager:_mdragon_valid()
 	if alive(self:local_player()) and self._is_mdragon then
 		if mdragon_data.armor_whitelist[managers.blackmarket:equipped_armor(true, true)] then

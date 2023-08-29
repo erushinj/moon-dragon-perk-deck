@@ -33,7 +33,7 @@ function CopDamage:damage_melee(attack_data, ...)
 
 	local result = damage_melee_original(self, attack_data, ...)
 
-	if type(result) == "table" then
+	if managers.player:is_mdragon() and type(result) == "table" then
 		managers.player:send_message( Message.OnEnemyShot, "mdragon", self._unit, attack_data )
 	end
 
